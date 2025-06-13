@@ -1,0 +1,15 @@
+<!DOCTYPE html>
+<html>
+<head><title>Enter Amount</title>
+<link rel="stylesheet" href="/styles.css">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+</head>
+<body>
+    <h2>Enter Amount Paid for {{ tenant.first_name }} {{ tenant.last_name }}</h2>
+    <form method="post">
+        Amount Paid: <input type="number" name="amount_paid" step="0.01" required>
+        <button type="submit">Generate Receipt</button>
+    </form>
+</body>
+</html>
