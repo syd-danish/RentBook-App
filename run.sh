@@ -1,2 +1,3 @@
 pip freeze > requirements.txt 
-docker-compose up --build -d
+docker-compose build
+docker-compose up -d
