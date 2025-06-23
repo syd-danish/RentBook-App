@@ -1,4 +1,4 @@
-/* General Reset and Base */
+
 body {
     margin: 0;
     padding: 0;
@@ -24,7 +24,6 @@ h1 {
     font-size: 2rem;
 }
 
-/* Button Styling */
 button,
 .btn {
     display: inline-block;
@@ -90,7 +89,6 @@ th {
     font-weight: bold;
 }
 
-/* Form on Add/Edit Page */
 form {
     max-width: 600px;
     margin: 0 auto;
@@ -131,4 +129,40 @@ td form {
 .add-button-container button {
     margin-left: 0;
 }
+@media (max-width: 768px) {
+  table, thead, tbody, th, td, tr {
+    display: block;
+  }
+}
+@media screen and (max-width: 600px) {
+    h1 {
+        font-size: 1.2em;
+    }
+
+    button {
+        width: 100%;
+        font-size: 1em;
+    }
+
+    table, thead, tbody, th, td, tr {
+        display: block;
+    }
+
+    th {
+        text-align: left;
+        padding-top: 10px;
+    }
+
+    td {
+        text-align: right;
+        padding-bottom: 10px;
+        border: none;
+    }
+
+    tr {
+        border-bottom: 1px solid #ccc;
+        margin-bottom: 10px;
+    }
+}
+
 
