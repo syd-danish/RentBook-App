@@ -1,23 +1,29 @@
 <!DOCTYPE html>
 <html>
-<head><title>Receipt</title>
-<link rel="stylesheet" href="/styles.css">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-
+<head>
+  <title>Receipt</title>
+  <link rel="stylesheet" href="/styles.css">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
 </head>
-
 <body>
-    <h2>Payment Receipt</h2>
-    <p><strong>Name:</strong> {{ tenant.first_name }} {{ tenant.last_name }}</p>
-    <p><strong>Date:</strong> {{ date }}</p>
-    <p><strong>Amount Paid:</strong> ₹{{ amount_paid }}</p>
-    <hr>
-    <p>Thank you for your payment!</p>
-    <div style="position: fixed; bottom: 20px; left: 0; width: 100%; text-align: center;">
-  <a href="{{ url_for('index') }}">
-    <button type="button">Back to Home</button>
-  </a>
-</div>
+  <h2 style="text-align: center;">Rent Receipt</h2>
+  <br>
+  <p>Date: {{ receipt_date }} </p>
+  <p>
+    Received from <strong>{{ tenant[1] }} {{ tenant[2] }}</strong>
+    the sum of <strong>Rs. {{ amount_in_words }} only</strong> being the rent for the month of
+    <strong>{{ month }} - {{ year }}</strong>.
+  </p>
+  <hr>
+  <p><strong>₹{{ amount_paid }}</strong></p>
+  <hr>
+  <p>Thank you for your payment!</p>
 
+  <div style="position: fixed; bottom: 20px; left: 0; width: 100%; text-align: center;">
+    <a href="{{ url_for('index') }}">
+      <button type="button">Back to Home</button>
+    </a>
+  </div>
 </body>
 </html>
+
