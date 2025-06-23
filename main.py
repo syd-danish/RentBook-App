@@ -1,17 +1,41 @@
-from flask import *
-from pymongo import MongoClient
+from flask import Flask, render_template, request, redirect, url_for, send_from_directory
+import sqlite3
 from datetime import datetime
-from bson.objectid import ObjectId
+from num2words import num2words
 import os
 
-app=Flask(__name__)
-mongo_uri = os.environ.get("MONGO_URI", "mongodb://localhost:27017")
-client = MongoClient(mongo_uri)
-db = client["RentBook"]
-tenants_collection = db["RentBookTenants"]
-tenants_collection.create_index("flat_no", unique=True)
+
+app = Flask(__name__)
+app.config['UPLOAD_FOLDER'] = 'uploads'
+DB_FILE = 'rentbook.db'
+conn = sqlite3.connect("rentbook.db", check_same_thread=False)
+cursor = conn.cursor()
 
 
+
+def get_db():
+    conn = sqlite3.connect(DB_FILE)
+    conn.row_factory = sqlite3.Row
+    return conn
+
+# --- Initialize DB ---
+def init_db():
+    with get_db() as conn:
+        conn.execute('''CREATE TABLE IF NOT EXISTS tenants (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            first_name TEXT,
+            last_name TEXT,
+            flat_no TEXT UNIQUE,
+            rent_per_month REAL,
+            dues REAL,
+            date_of_occupance TEXT,
+            contract_issued_date TEXT,
+            tenant_document TEXT
+        )''')
+
+@app.before_request
+def setup():
+    init_db()
 
 @app.route('/styles.css')
 def serve_css():
@@ -19,51 +43,97 @@ def serve_css():
 
 @app.route('/')
 def index():
-    tenants = list(tenants_collection.find())
+    with get_db() as conn:
+        tenants = conn.execute("SELECT * FROM tenants").fetchall()
     return render_template('index.html', tenants=tenants)
 
-
 @app.route('/add', methods=['GET', 'POST'])
-@app.route('/edit/<tenant_id>', methods=['GET', 'POST'])
+@app.route('/edit/<int:tenant_id>', methods=['GET', 'POST'])
 def add_tenant(tenant_id=None):
     tenant = None
-    if tenant_id:
-        tenant = tenants_collection.find_one({'_id': ObjectId(tenant_id)})
+    with get_db() as conn:
+        if tenant_id:
+            tenant = conn.execute("SELECT * FROM tenants WHERE id=?", (tenant_id,)).fetchone()
+
     if request.method == 'POST':
-        tenant_data = {
-            "first_name": request.form['first_name'],
-            "last_name": request.form['last_name'],
-            "no_of_residents": int(request.form['no_of_residents']),
-            "dues_remaining": float(request.form['dues_remaining']),
-            "flat_no": request.form['flat_no']
-        }
-        if tenant:
-            tenants_collection.update_one({'_id': ObjectId(tenant_id)}, {'$set': tenant_data})
-        else:
-            tenants_collection.insert_one(tenant_data)
+        data = (
+            request.form['first_name'],
+            request.form['last_name'],
+            request.form['flat_no'],
+            float(request.form['rent_per_month']),
+            float(request.form['dues']),
+            request.form['date_of_occupance'],
+            request.form['contract_issued_date']
+        )
+        file = request.files.get('tenant_document')
+        file_path = None
+        if file and file.filename.endswith('.pdf'):
+            filename = f"{data[0]}_{data[1]}_{file.filename}"
+            file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+            file.save(file_path)
+
+        with get_db() as conn:
+            if tenant:
+                conn.execute('''
+                    UPDATE tenants SET
+                        first_name=?, last_name=?, flat_no=?, rent_per_month=?, dues=?,
+                        date_of_occupance=?, contract_issued_date=?, tenant_document=?
+                    WHERE id=?
+                ''', (*data, file_path, tenant_id))
+            else:
+                conn.execute('''
+                    INSERT INTO tenants (
+                        first_name, last_name, flat_no, rent_per_month, dues,
+                        date_of_occupance, contract_issued_date, tenant_document
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                ''', (*data, file_path))
+
         return redirect(url_for('index'))
+
     return render_template('add_tenant.html', tenant=tenant)
 
-@app.route('/receipt/<tenant_id>', methods=['GET', 'POST'])
+@app.route('/receipt/<int:tenant_id>', methods=['GET', 'POST'])
 def generate_receipt(tenant_id):
-    tenant = tenants_collection.find_one({'_id': ObjectId(tenant_id)})
+    current_year = datetime.now().year
+    with get_db() as conn:
+        tenant = conn.execute("SELECT * FROM tenants WHERE id=?", (tenant_id,)).fetchone()
 
     if request.method == 'POST':
         amount_paid = float(request.form['amount_paid'])
-        date = datetime.now().strftime('%Y-%m-%d')
-        new_dues = tenant['dues_remaining'] - amount_paid
-        tenants_collection.update_one(
-            {'_id': ObjectId(tenant_id)},
-            {'$set': {'dues_remaining': new_dues}}
-        )
-        tenant = tenants_collection.find_one({'_id': ObjectId(tenant_id)})
-        return render_template('receipt.html', tenant=tenant, amount_paid=amount_paid, date=date)
-    return render_template('receipt_form.html', tenant=tenant)
+        receipt_date = request.form['receipt_date']
+        month = request.form['month']
+        year = request.form['year']
 
-@app.route('/delete/<tenant_id>', methods=['POST'])
+        new_dues = tenant['dues'] - amount_paid
+        if new_dues < 0:
+            new_dues = 0
+
+        with get_db() as conn:
+            conn.execute("UPDATE tenants SET dues=? WHERE id=?", (new_dues, tenant_id))
+
+        amount_in_words = num2words(amount_paid, to='currency', lang='en_IN').replace('euro', 'Rupees').replace('cents', 'paise')
+
+        return render_template(
+            'receipt.html',
+            tenant=tenant,
+            amount_paid=amount_paid,
+            receipt_date=receipt_date,
+            month=month,
+            year=year,
+            amount_in_words=amount_in_words
+        )
+
+    return render_template('receipt_form.html', tenant=tenant, current_year=current_year)
+
+@app.route('/delete/<int:tenant_id>', methods=['POST'])
 def delete_tenant(tenant_id):
-    tenants_collection.delete_one({'_id': ObjectId(tenant_id)})
+    with get_db() as conn:
+        conn.execute("DELETE FROM tenants WHERE id=?", (tenant_id,))
     return redirect(url_for('index'))
 
 if __name__ == '__main__':
-    app.run(debug=True,host='0.0.0.0', port=80)
+    init_db()
+    if not os.path.exists('uploads'):
+        os.makedirs('uploads')
+    app.run(debug=True, host='0.0.0.0', port=80)
+
