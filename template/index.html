@@ -2,42 +2,62 @@
 <html>
 <head>
     <title>Tenants Dashboard</title>
-<link rel="stylesheet" href="/styles.css">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-
+    <link rel="stylesheet" href="/styles.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
 </head>
 <body>
     <h1>RentBook App</h1>
     <form action="{{ url_for('add_tenant') }}" method="get" style="display: inline;">
-    <button type="submit">Add New Tenant</button>
-</form>
-
-
-    <table border="1">
-        <tr>
-            <th>First Name</th><th>Last Name</th><th>Residents</th><th>Dues</th><th>Flat No</th>
-        </tr>
-        {% for tenant in tenants %}
-        <tr>
-            <td>{{ tenant.first_name }}</td>
-            <td>{{ tenant.last_name }}</td>
-            <td>{{ tenant.no_of_residents }}</td>
-            <td>{{ tenant.dues_remaining }}</td>
-            <td>{{ tenant.flat_no }}</td>
-            <td>
-    <form action="{{ url_for('generate_receipt', tenant_id=tenant._id) }}">
-        <button type="submit">Generate Receipt</button>
-    </form></td>
-<td>                <form action="{{ url_for('add_tenant', tenant_id=tenant._id) }}" style="display:inline;">
-        <button type="submit">Edit</button>
+        <button type="submit">Add New Tenant</button>
     </form>
-</td> <td>
-            <form action="{{ url_for('delete_tenant', tenant_id=tenant._id) }}" method="post" style="display:inline;" onsubmit="return confirm('Are you sure you want to remove this tenant?');">
-        <button type="submit" style="color:red;">Remove</button>
-    </form></td>
 
-        </tr>
-        {% endfor %}
-    </table>
+    <div style="overflow-x: auto; width: 100%;">
+        <table border="1">
+            <tr>
+                <th>First Name</th>
+                <th>Last Name</th>
+                <th>Flat No</th>
+                <th>Rent Per Month</th>
+                <th>Dues</th>
+                <th>Date of Occupance</th>
+                <th>Contract Issued Date</th>
+                <th>Tenant Document</th>
+
+            </tr>
+            {% for tenant in tenants %}
+            <tr>
+                <td>{{ tenant.first_name }}</td>
+                <td>{{ tenant.last_name }}</td>
+                <td>{{ tenant.flat_no }}</td>
+                <td>₹{{ tenant.rent_per_month }}/-</td>
+                <td>₹{{ tenant.dues }}/-</td>
+                <td>{{ tenant.date_of_occupance }}</td>
+                <td>{{ tenant.contract_issued_date }}</td>
+                <td>
+                    {% if tenant.tenant_document %}
+                        <a href="{{ url_for('static', filename=tenant.tenant_document.split('static/')[-1]) }}" target="_blank">View</a>
+                    {% else %}
+                        N/A
+                    {% endif %}
+                </td>
+                <td>
+                    <form action="{{ url_for('generate_receipt', tenant_id=tenant.id) }}">
+                        <button type="submit">Generate Receipt</button>
+                    </form>
+                </td>
+                <td>
+                    <form action="{{ url_for('add_tenant', tenant_id=tenant.id) }}" style="display:inline;">
+                        <button type="submit">Edit</button>
+                    </form>
+                </td>
+                <td>
+                    <form action="{{ url_for('delete_tenant', tenant_id=tenant.id) }}" method="post" style="display:inline;" onsubmit="return confirm('Are you sure you want to remove this tenant?');">
+                        <button type="submit" style="color:red;">Remove</button>
+                    </form>
+                </td>
+            </tr>
+            {% endfor %}
+        </table>
+    </div>
 </body>
 </html>
