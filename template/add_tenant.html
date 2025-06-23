@@ -1,26 +1,30 @@
 <!DOCTYPE html>
 <html>
-<head><title>{% if tenant %}Edit{% else %}Add{% endif %} Tenant</title>
-<link rel="stylesheet" href="/styles.css">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-
+<head>
+    <title>{% if tenant %}Edit{% else %}Add{% endif %} Tenant</title>
+    <link rel="stylesheet" href="/styles.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
 </head>
 <body>
     <h1>{% if tenant %}Edit{% else %}Add{% endif %} Tenant Information</h1>
-    <form method="post">
-        First Name: <input type="text" name="first_name" value="{{ tenant.first_name if tenant else '' }}" required><br>
-        Last Name: <input type="text" name="last_name" value="{{ tenant.last_name if tenant else '' }}" required><br>
-        No. of Residents: <input type="number" name="no_of_residents" value="{{ tenant.no_of_residents if tenant else '' }}" required><br>
-        Dues Remaining: <input type="number" step="0.01" name="dues_remaining" value="{{ tenant.dues_remaining if tenant else '' }}" required><br>
-        Flat No: <input type="text" name="flat_no" value="{{ tenant.flat_no if tenant else '' }}" required><br>
+    <form method="post" enctype="multipart/form-data">
+        First Name: <input type="text" name="first_name" value="{{ tenant['first_name'] if tenant else '' }}" required><br>
+        Last Name: <input type="text" name="last_name" value="{{ tenant['last_name'] if tenant else '' }}" required><br>
+        Flat No: <input type="text" name="flat_no" value="{{ tenant['flat_no'] if tenant else '' }}" required><br>
+        Rent Per Month: <input type="number" name="rent_per_month" step="0.1" value="{{ tenant['rent_per_month'] if tenant else '' }}" required><br>
+        Dues: <input type="number" name="dues" step="0.1" value="{{ tenant['dues'] if tenant else '' }}" required><br>
+        Date of Occupance: <input type="date" name="date_of_occupance" value="{{ tenant['date_of_occupance'] if tenant else '' }}" required><br>
+        Contract Issued Date: <input type="date" name="contract_issued_date" value="{{ tenant['contract_issued_date'] if tenant else '' }}" required><br>
+        Tenant Documents (PDF, optional): <input type="file" name="tenant_document" accept="application/pdf"><br>
         <button type="submit">{% if tenant %}Update{% else %}Add{% endif %} Tenant</button>
     </form>
-    <div style="text-align: center; margin-top: 20px;">
-  <a href="{{ url_for('index') }}">
-    <button type="button">Back to Home</button>
-  </a>
-</div>
 
-    
+    <div style="text-align: center; margin-top: 20px;">
+        <a href="{{ url_for('index') }}">
+            <button type="button">Back to Home</button>
+        </a>
+    </div>
 </body>
 </html>
+
+
