@@ -1,8 +1,12 @@
-from flask import Flask, render_template, request, redirect, url_for, send_from_directory
-import sqlite3
+from flask import Flask, render_template, request, redirect, url_for, send_from_directory,send_file
+import sqlite3,os
 from datetime import datetime
 from num2words import num2words
-import os
+from io import BytesUI
+from docx import Document
+from bs4 import BeautifulSoup
+
+
 
 
 app = Flask(__name__)
@@ -130,6 +134,45 @@ def delete_tenant(tenant_id):
     with get_db() as conn:
         conn.execute("DELETE FROM tenants WHERE id=?", (tenant_id,))
     return redirect(url_for('index'))
+
+
+@app.route('/download_docx/<int:tenant_id>')
+def download_docx(tenant_id):
+    with get_db() as conn:
+        tenant = conn.execute("SELECT * FROM tenants WHERE id=?", (tenant_id,)).fetchone()
+    if not tenant:
+        return "Tenant not found", 404
+    amount_paid = tenant['rent_per_month']
+    receipt_date = datetime.now().strftime("%Y-%m-%d")
+    month = "June"
+    year = "2025"
+    amount_in_words = num2words(amount_paid, to='currency', lang='en_IN').replace('euro', 'Rupees').replace('cents', 'paise')
+    html = render_template(
+        'receipt.html',
+        tenant=tenant,
+        amount_paid=amount_paid,
+        receipt_date=receipt_date,
+        month=month,
+        year=year,
+        amount_in_words=amount_in_words,
+        docx=True  # disables button section
+    )
+    soup = BeautifulSoup(html, 'html.parser')
+    text_content = soup.get_text(separator="\n")
+    doc = Document()
+    for line in text_content.splitlines():
+        if line.strip():
+            doc.add_paragraph(line.strip())
+    doc_stream = BytesIO()
+    doc.save(doc_stream)
+    doc_stream.seek(0)
+    filename = f"Receipt_{tenant['first_name']}_{tenant['last_name']}.docx"
+    return send_file(doc_stream, as_attachment=True, download_name=filename, mimetype='application/vnd.openxmlformats-officedocument.wordprocessingml.document')
+
+
+
+
+
 
 if __name__ == '__main__':
     init_db()
