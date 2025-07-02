@@ -18,7 +18,9 @@
   <p><strong>₹{{ amount_paid }}</strong></p>
   <hr>
   <p>Thank you for your payment!</p>
-
+<a href="{{ url_for('download_docx', tenant_id=tenant.id) }}">
+  <button>Download as Word</button>
+</a>
   <div style="position: fixed; bottom: 20px; left: 0; width: 100%; text-align: center;">
     <a href="{{ url_for('index') }}">
       <button type="button">Back to Home</button>
