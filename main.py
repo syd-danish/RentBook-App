@@ -6,23 +6,16 @@ from io import BytesUI
 from docx import Document
 from bs4 import BeautifulSoup
 
-
-
-
 app = Flask(__name__)
 app.config['UPLOAD_FOLDER'] = 'uploads'
 DB_FILE = 'rentbook.db'
 conn = sqlite3.connect("rentbook.db", check_same_thread=False)
 cursor = conn.cursor()
 
-
-
 def get_db():
     conn = sqlite3.connect(DB_FILE)
     conn.row_factory = sqlite3.Row
     return conn
-
-# --- Initialize DB ---
 def init_db():
     with get_db() as conn:
         conn.execute('''CREATE TABLE IF NOT EXISTS tenants (
@@ -168,11 +161,6 @@ def download_docx(tenant_id):
     doc_stream.seek(0)
     filename = f"Receipt_{tenant['first_name']}_{tenant['last_name']}.docx"
     return send_file(doc_stream, as_attachment=True, download_name=filename, mimetype='application/vnd.openxmlformats-officedocument.wordprocessingml.document')
-
-
-
-
-
 
 if __name__ == '__main__':
     init_db()
